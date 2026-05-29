@@ -1,24 +1,35 @@
+/* ============================================================
+ * 全局样式 —— 今日待办
+ * 设计风格：毛玻璃半透明 + 圆角卡片
+ * ============================================================ */
+
 :root {
-  --bg: rgba(245, 245, 247, 0.72);
+  /* 主背景色：降低透明度使内容更清晰可读 */
+  --bg: rgba(245, 245, 247, 0.88);
   --text: #1d1d1f;
   --text-secondary: #86868b;
   --done: #c7c7cc;
+  /* 主题强调色 */
   --accent: #007aff;
+  --accent-light: rgba(0, 122, 255, 0.15);
   --danger: #ff3b30;
   --border: rgba(0, 0, 0, 0.08);
-  --item-bg: rgba(255, 255, 255, 0.55);
-  --item-bg-hover: rgba(255, 255, 255, 0.75);
+  /* 列表项背景：提高不透明度使文字更易读 */
+  --item-bg: rgba(255, 255, 255, 0.72);
+  --item-bg-hover: rgba(255, 255, 255, 0.88);
 }
 
+/* 暗色模式适配 */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: rgba(30, 30, 32, 0.72);
+    --bg: rgba(30, 30, 32, 0.88);
     --text: #f5f5f7;
     --text-secondary: #98989d;
     --done: #5a5a60;
+    --accent-light: rgba(0, 122, 255, 0.25);
     --border: rgba(255, 255, 255, 0.08);
-    --item-bg: rgba(255, 255, 255, 0.05);
-    --item-bg-hover: rgba(255, 255, 255, 0.10);
+    --item-bg: rgba(255, 255, 255, 0.08);
+    --item-bg-hover: rgba(255, 255, 255, 0.14);
   }
 }
 
@@ -32,10 +43,36 @@ html, body, #app {
   color: var(--text);
   user-select: none;
   overflow: hidden;
-  background: transparent; /* 关键：让 Tauri 透明窗口生效 */
+  /* 关键：让 Tauri 透明窗口生效 */
+  background: transparent;
+  /* 裁剪圆角外的直角区域，解决 Windows 透明窗口四角残留问题 */
+  border-radius: 12px;
 }
 
-/* 外壳：磨砂玻璃 */
+/* ===== 时间选择器弹出面板内的选中日期高亮色 ===== */
+/* WebView2 (Chromium) 日历面板伪元素样式覆盖 */
+::-webkit-datetime-edit {
+  color: var(--text);
+}
+::-webkit-datetime-edit-fields-wrapper {
+  color: var(--text);
+}
+/* 日历面板中选中的日期：使用主题强调色而非默认灰色 */
+::-webkit-calendar-picker-indicator {
+  color: var(--accent);
+}
+
+/* 强制覆盖系统颜色方案，确保选中态为亮色 */
+input[type="datetime-local"] {
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  input[type="datetime-local"] {
+    color-scheme: dark;
+  }
+}
+
+/* 外壳：磨砂玻璃效果 */
 .app {
   display: flex;
   flex-direction: column;
@@ -57,7 +94,29 @@ html, body, #app {
   cursor: default;
 }
 .title { font-weight: 600; font-size: 15px; }
+/* 标题栏右侧：日期 + 提示音开关 */
+.title-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .date  { font-size: 12px; color: var(--text-secondary); }
+
+/* 提示音开关按钮 */
+.sound-toggle {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s;
+}
+.sound-toggle:hover {
+  opacity: 1;
+  background: var(--accent-light);
+}
 
 /* ---------- 输入区 ---------- */
 .input-area {
@@ -86,7 +145,7 @@ html, body, #app {
   font-size: 11px;
   color: var(--text-secondary);
 }
-.time-row input {
+.time-row input[type="datetime-local"] {
   flex: 1;
   padding: 4px 6px;
   border: 1px solid var(--border);
@@ -95,10 +154,44 @@ html, body, #app {
   color: var(--text);
   font-size: 11px;
   outline: none;
+  transition: border-color 0.15s, background 0.15s;
+  /* 关键：accent-color 控制日历弹出面板中选中日期的高亮色 */
+  accent-color: var(--accent);
+}
+
+/* 时间选择器获得焦点时：亮色边框 + 浅色背景高亮 */
+.time-row input[type="datetime-local"]:focus {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+/* 时间选择器日历图标样式（WebKit 内核） */
+.time-row input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 2px;
+  transition: background 0.15s;
+}
+.time-row input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  background: var(--accent-light);
+}
+
+/* 时间选择器内部选中文本的高亮色 */
+.time-row input[type="datetime-local"]::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* 暗色模式下日历图标反色以保持可见 */
+@media (prefers-color-scheme: dark) {
+  .time-row input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
 }
 
 .add-btn {
-  width: 100%;
+  flex: 1;
   margin-top: 8px;
   padding: 7px;
   background: var(--accent);
@@ -112,6 +205,151 @@ html, body, #app {
 }
 .add-btn:hover  { opacity: 0.85; }
 .add-btn:active { opacity: 0.70; }
+.add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 按钮行：添加 + 批量添加并排 */
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* 批量添加按钮：次要样式 */
+.batch-btn {
+  flex: 1;
+  margin-top: 8px;
+  padding: 7px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.batch-btn:hover { background: var(--accent-light); }
+.batch-btn:active { opacity: 0.70; }
+
+/* ---------- 批量添加弹窗 ---------- */
+/* 遮罩层 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border-radius: 12px;
+}
+
+/* 弹窗主体 */
+.modal {
+  width: 90%;
+  max-width: 360px;
+  background: var(--bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* 弹窗头部 */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+.modal-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.modal-close:hover { background: rgba(255, 59, 48, 0.15); color: var(--danger); }
+
+/* 弹窗内容区 */
+.modal-body {
+  padding: 12px 16px;
+}
+
+/* 批量输入文本框 */
+.batch-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--item-bg);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  min-height: 120px;
+  transition: border-color 0.15s;
+}
+.batch-textarea:focus { border-color: var(--accent); }
+.batch-textarea::placeholder { color: var(--text-secondary); }
+
+/* 批量添加的时间选择行 */
+.batch-time-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.batch-time-row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.batch-time-row input[type="datetime-local"] {
+  flex: 1;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--item-bg);
+  color: var(--text);
+  font-size: 11px;
+  outline: none;
+  accent-color: var(--accent);
+}
+
+/* 弹窗底部 */
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--border);
+}
+.batch-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.modal-footer .add-btn {
+  flex: none;
+  margin-top: 0;
+  padding: 6px 16px;
+}
+
+/* 弹窗动画 */
+.modal-enter-active, .modal-leave-active { transition: all 0.2s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-from .modal, .modal-leave-to .modal { transform: scale(0.95); }
 
 /* ---------- 列表 ---------- */
 .list {
@@ -137,13 +375,13 @@ html, body, #app {
 }
 .item:hover { background: var(--item-bg-hover); }
 
-/* 已完成 */
+/* 已完成项：文字划线 + 变灰 */
 .item.done .item-text {
   text-decoration: line-through;
   color: var(--done);
 }
 
-/* 超时 */
+/* 超时项：红色警示背景 */
 .item.overdue {
   background: rgba(255, 59, 48, 0.12);
   border: 1px solid rgba(255, 59, 48, 0.30);
@@ -187,7 +425,7 @@ html, body, #app {
   font-size: 13px;
 }
 
-/* ---------- Toast ---------- */
+/* ---------- Toast 提示 ---------- */
 .toast {
   position: fixed;
   bottom: 16px;
@@ -209,7 +447,7 @@ html, body, #app {
 .toast.warn  { background: rgba(255, 149, 0, 0.85); }
 .toast.error { background: rgba(255, 59, 48, 0.90); }
 
-/* ---------- 动画 ---------- */
+/* ---------- 过渡动画 ---------- */
 .item-enter-active, .item-leave-active { transition: all 0.25s ease; }
 .item-enter-from  { opacity: 0; transform: translateY(-8px); }
 .item-leave-to    { opacity: 0; transform: translateX(20px); }
